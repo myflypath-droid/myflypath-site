@@ -12,7 +12,7 @@ function getStore_configured(name) {
   });
 }
 
-const PRICE = 8999;
+const PRICE = 50;
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
