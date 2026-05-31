@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Titre et SEO -->
+    <title>MyFlyPath — Deviens pilote, un jour à la fois</title>
+    <meta name="description" content="Micro-apprentissage PPL & IFR, parcours gamifié, fiches de révision et LogBook digital. Tout ce qu'il te faut pour devenir pilote." />
+
+    <!-- Réseaux sociaux (carte de partage) -->
+    <meta property="og:title" content="MyFlyPath — Deviens pilote, un jour à la fois" />
+    <meta property="og:description" content="Micro-apprentissage PPL & IFR, parcours gamifié, fiches de révision et LogBook digital." />
+    <meta property="og:image" content="https://myflypath.fr/og-image.png" />
+    <meta property="og:url" content="https://myflypath.fr" />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter/X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MyFlyPath — Deviens pilote, un jour à la fois" />
+    <meta name="twitter:description" content="Micro-apprentissage PPL & IFR, parcours gamifié, fiches de révision et LogBook digital." />
+    <meta name="twitter:image" content="https://myflypath.fr/og-image.png" />
+
+    <style>
+      /* Animations globales — fondu rapide, zéro délai, zéro déplacement */
+      .reveal {
+        opacity: 0;
+        transition: opacity 0.35s ease !important;
+        transform: none !important;
+        will-change: opacity;
+      }
+      .reveal.revealed {
+        opacity: 1;
+      }
+      .reveal-d1, .reveal-d2, .reveal-d3,
+      .reveal-d4, .reveal-d5, .reveal-d6 {
+        transition-delay: 0ms !important;
+      }
+
+      /* Scroll fluide + compensation navbar */
+      html {
+        scroll-behavior: smooth;
+      }
+      section[id] {
+        scroll-margin-top: 80px;
+      }
+
+      /* Fix iOS Safari */
+      html, body {
+        overflow-x: hidden;
+        width: 100%;
+        -webkit-font-smoothing: antialiased;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
