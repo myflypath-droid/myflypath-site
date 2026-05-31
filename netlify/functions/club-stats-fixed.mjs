@@ -1,7 +1,13 @@
 // ─── club-stats.mjs ───────────────────────────────────────────────────────
-// Retourne les stats de tous les clubs (protégé par mot de passe)
-// ─────────────────────────────────────────────────────────────────────────
 import { getStore } from "@netlify/blobs";
+
+function getStore_configured(name) {
+  return getStore({
+    name,
+    siteID: process.env.NETLIFY_SITE_ID,
+    token: process.env.NETLIFY_TOKEN,
+  });
+}
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -14,9 +20,7 @@ export const handler = async (event) => {
     return { statusCode: 401, body: JSON.stringify({ error: "Non autorisé" }) };
   }
 
-  const store = getStore("clubs");
-
-  // Lister tous les clubs
+  const store = getStore_configured("clubs");
   const { blobs } = await store.list();
 
   const clubs = await Promise.all(
@@ -39,7 +43,6 @@ export const handler = async (event) => {
     })
   );
 
-  // Trier par achats décroissant
   clubs.sort((a, b) => b.achats - a.achats);
 
   return {

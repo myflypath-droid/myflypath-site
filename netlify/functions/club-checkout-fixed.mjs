@@ -1,17 +1,18 @@
 // ─── club-checkout.mjs ────────────────────────────────────────────────────
-// Crée une session Stripe pour un achat via page partenaire
-// ─────────────────────────────────────────────────────────────────────────
 import Stripe from "stripe";
 import { getStore } from "@netlify/blobs";
-import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
 
-const PRICE = 8999; // 89.99€ prix plein
+function getStore_configured(name) {
+  return getStore({
+    name,
+    siteID: process.env.NETLIFY_SITE_ID,
+    token: process.env.NETLIFY_TOKEN,
+  });
+}
+
+const PRICE = 8999;
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -24,8 +25,7 @@ export const handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Slug et email requis" }) };
   }
 
-  // Vérifier que le club existe
-  const store = getStore("clubs");
+  const store = getStore_configured("clubs");
   let club = null;
   try {
     const raw = await store.get(slug);
@@ -36,11 +36,8 @@ export const handler = async (event) => {
     return { statusCode: 404, body: JSON.stringify({ error: "Club introuvable ou inactif" }) };
   }
 
-  const baseUrl = process.env.NODE_ENV === "development"
-    ? "http://localhost:8888"
-    : "https://myflypath.fr";
+  const baseUrl = "https://myflypath.fr";
 
-  // Créer la session Stripe
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     mode: "payment",

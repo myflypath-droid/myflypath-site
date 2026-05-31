@@ -1,7 +1,13 @@
 // ─── club-manage.mjs ──────────────────────────────────────────────────────
-// Créer / modifier / supprimer un club (protégé par mot de passe)
-// ─────────────────────────────────────────────────────────────────────────
 import { getStore } from "@netlify/blobs";
+
+function getStore_configured(name) {
+  return getStore({
+    name,
+    siteID: process.env.NETLIFY_SITE_ID,
+    token: process.env.NETLIFY_TOKEN,
+  });
+}
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -14,15 +20,12 @@ export const handler = async (event) => {
     return { statusCode: 401, body: JSON.stringify({ error: "Non autorisé" }) };
   }
 
-  const store = getStore("clubs");
+  const store = getStore_configured("clubs");
 
-  // Créer ou mettre à jour un club
   if (action === "upsert") {
     if (!slug || !nom) {
       return { statusCode: 400, body: JSON.stringify({ error: "Slug et nom requis" }) };
     }
-
-    // Récupérer les données existantes
     let existing = {};
     try {
       const raw = await store.get(slug);
@@ -42,7 +45,6 @@ export const handler = async (event) => {
     return { statusCode: 200, body: JSON.stringify({ ok: true, club }) };
   }
 
-  // Désactiver un club
   if (action === "toggle") {
     const raw = await store.get(slug);
     if (!raw) return { statusCode: 404, body: JSON.stringify({ error: "Club introuvable" }) };
@@ -52,7 +54,6 @@ export const handler = async (event) => {
     return { statusCode: 200, body: JSON.stringify({ ok: true, actif: club.actif }) };
   }
 
-  // Supprimer un club
   if (action === "delete") {
     await store.delete(slug);
     return { statusCode: 200, body: JSON.stringify({ ok: true }) };

@@ -1,7 +1,13 @@
 // ─── club-visit.mjs ───────────────────────────────────────────────────────
-// Enregistre une visite sur une page partenaire
-// ─────────────────────────────────────────────────────────────────────────
 import { getStore } from "@netlify/blobs";
+
+function getStore_configured(name) {
+  return getStore({
+    name,
+    siteID: process.env.NETLIFY_SITE_ID,
+    token: process.env.NETLIFY_TOKEN,
+  });
+}
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -11,9 +17,8 @@ export const handler = async (event) => {
   const { slug } = JSON.parse(event.body || "{}");
   if (!slug) return { statusCode: 400, body: JSON.stringify({ error: "Slug manquant" }) };
 
-  const store = getStore("clubs");
+  const store = getStore_configured("clubs");
 
-  // Récupérer les données du club
   let club = null;
   try {
     const raw = await store.get(slug);
@@ -24,11 +29,8 @@ export const handler = async (event) => {
     return { statusCode: 404, body: JSON.stringify({ error: "Club introuvable" }) };
   }
 
-  // Incrémenter les visites
   club.visites = (club.visites || 0) + 1;
   club.lastVisit = new Date().toISOString();
-
-  // Sauvegarder
   await store.set(slug, JSON.stringify(club));
 
   return {
