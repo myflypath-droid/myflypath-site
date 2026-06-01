@@ -4,7 +4,7 @@ import { getStore } from "@netlify/blobs";
 import { getAndMarkAppleCode } from "./get-apple-code.mjs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const MAILERLITE_API_KEY = process.env.MAILERLITE_API_KEY;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const ADMIN_EMAIL = "admin@myflypath.fr";
 
 function getClubStore() {
@@ -40,6 +40,7 @@ export const handler = async (event) => {
 
   // 1. Récupérer un code Apple depuis Netlify Blobs
   const appleCode = await getAndMarkAppleCode(email);
+  console.log("Apple code retrieved:", appleCode);
 
   // 2. Mettre à jour les stats du club
   const store = getClubStore();
@@ -51,34 +52,45 @@ export const handler = async (event) => {
       club.revenue = (club.revenue || 0) + (session.amount_total / 100);
       await store.set(club_slug, JSON.stringify(club));
     }
-  } catch {}
+  } catch (err) {
+    console.error("Club stats update error:", err.message);
+  }
 
   // 3. Mail client
-  await sendMail({
+  const clientRes = await sendMail({
     to: email,
     subject: "Bienvenue sur MyFlyPath Pro !",
     html: buildClientEmail({ club_nom, appleCode }),
   });
+  console.log("Client mail sent:", clientRes);
 
   // 4. Mail admin
-  await sendMail({
+  const adminRes = await sendMail({
     to: ADMIN_EMAIL,
     subject: `Nouvel achat Club — ${club_nom}`,
     html: buildAdminEmail({ email, club_slug, club_nom, appleCode, session }),
   });
+  console.log("Admin mail sent:", adminRes);
 
   return { statusCode: 200, body: "OK" };
 };
 
 async function sendMail({ to, subject, html }) {
-  await fetch("https://connect.mailerlite.com/api/emails", {
+  const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${MAILERLITE_API_KEY}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+    },
     body: JSON.stringify({
-      from: { email: "noreply@myflypath.fr", name: "MyFlyPath" },
-      to: [{ email: to }], subject, html,
+      from: "MyFlyPath <noreply@myflypath.fr>",
+      to: [to],
+      subject,
+      html,
     }),
   });
+  const data = await res.json();
+  return data;
 }
 
 function buildClientEmail({ club_nom, appleCode }) {
