@@ -1,19 +1,14 @@
 // ─── get-apple-code.mjs ───────────────────────────────────────────────────
-// Lit les credentials depuis un fichier local (non pushé sur GitHub)
-// ─────────────────────────────────────────────────────────────────────────
 import { google } from "googleapis";
 import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { resolve } from "path";
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 
 // Lire les credentials depuis le fichier JSON local
 let credentials;
 try {
-  const credsPath = join(__dirname, "google-credentials.json");
+  const credsPath = resolve(process.cwd(), "netlify/functions/google-credentials.json");
   credentials = JSON.parse(readFileSync(credsPath, "utf8"));
 } catch (err) {
   console.error("Impossible de lire google-credentials.json:", err.message);
