@@ -90,7 +90,6 @@ export default function ClubPage() {
         <div className="max-w-lg mx-auto flex items-center justify-center gap-4">
           {/* Logo MyFlyPath */}
           <div className="flex items-center gap-2">
-            <img src="/favicon.png" alt="MyFlyPath" className="w-8 h-8" />
             <span className="font-black text-lg">
               My<span style={{ color: '#FF9500' }}>Fly</span>Path
             </span>
