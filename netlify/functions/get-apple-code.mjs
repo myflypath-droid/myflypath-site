@@ -5,22 +5,14 @@ const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
 const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
-// DEBUG — à supprimer après résolution
-console.log("=== DEBUG GOOGLE AUTH ===");
-console.log("SHEET_ID:", SHEET_ID);
-console.log("EMAIL:", SERVICE_ACCOUNT_EMAIL);
-console.log("PRIVATE_KEY length:", PRIVATE_KEY?.length);
-console.log("PRIVATE_KEY start:", PRIVATE_KEY?.substring(0, 40));
-console.log("=========================");
-
 async function getSheetClient() {
-  const auth = new google.auth.JWT(
-    SERVICE_ACCOUNT_EMAIL,
-    null,
-    PRIVATE_KEY,
-    ["https://www.googleapis.com/auth/spreadsheets"]
-  );
-  await auth.authorize();
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: SERVICE_ACCOUNT_EMAIL,
+      private_key: PRIVATE_KEY,
+    },
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
   return google.sheets({ version: "v4", auth });
 }
 
