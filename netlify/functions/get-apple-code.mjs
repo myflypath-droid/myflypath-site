@@ -9,7 +9,7 @@ function getCodesStore() {
   });
 }
 
-export async function getAndMarkAppleCode(email) {
+export async function getAndMarkAppleCode(email, club, amount) {
   const store = getCodesStore();
 
   let codesData;
@@ -26,6 +26,8 @@ export async function getAndMarkAppleCode(email) {
   available.used = true;
   available.sentAt = new Date().toISOString();
   available.sentTo = email;
+  available.club = club || null;
+  available.amount = amount || null;
 
   await store.set("codes", JSON.stringify(codesData));
 

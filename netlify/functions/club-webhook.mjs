@@ -37,10 +37,11 @@ export const handler = async (event) => {
   if (!club_slug) return { statusCode: 200, body: "Not a club order" };
 
   const email = customer_email || session.customer_email;
+  const amount = session.amount_total / 100;
 
-  // 1. Récupérer un code Apple depuis Netlify Blobs
-  const appleCode = await getAndMarkAppleCode(email);
-  console.log("Apple code retrieved:", appleCode);
+  // 1. Récupérer un code Apple avec club et montant
+  const appleCode = await getAndMarkAppleCode(email, club_nom, amount);
+  console.log("Apple code:", appleCode);
 
   // 2. Mettre à jour les stats du club
   const store = getClubStore();
@@ -49,28 +50,26 @@ export const handler = async (event) => {
     if (raw) {
       const club = JSON.parse(raw);
       club.achats = (club.achats || 0) + 1;
-      club.revenue = (club.revenue || 0) + (session.amount_total / 100);
+      club.revenue = (club.revenue || 0) + amount;
       await store.set(club_slug, JSON.stringify(club));
     }
   } catch (err) {
-    console.error("Club stats update error:", err.message);
+    console.error("Club stats error:", err.message);
   }
 
   // 3. Mail client
-  const clientRes = await sendMail({
+  await sendMail({
     to: email,
     subject: "Bienvenue sur MyFlyPath Pro !",
     html: buildClientEmail({ club_nom, appleCode }),
   });
-  console.log("Client mail sent:", clientRes);
 
   // 4. Mail admin
-  const adminRes = await sendMail({
+  await sendMail({
     to: ADMIN_EMAIL,
     subject: `Nouvel achat Club — ${club_nom}`,
     html: buildAdminEmail({ email, club_slug, club_nom, appleCode, session }),
   });
-  console.log("Admin mail sent:", adminRes);
 
   return { statusCode: 200, body: "OK" };
 };
@@ -90,6 +89,7 @@ async function sendMail({ to, subject, html }) {
     }),
   });
   const data = await res.json();
+  console.log("Mail result:", JSON.stringify(data));
   return data;
 }
 
@@ -118,7 +118,7 @@ function buildAdminEmail({ email, club_slug, club_nom, appleCode, session }) {
         <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Club</td><td style="color:#FF9500;font-weight:bold;">${club_nom}</td></tr>
         <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Slug</td><td style="color:#fff;">${club_slug}</td></tr>
         <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Code Apple</td><td style="color:#4CAF50;font-weight:bold;">${appleCode || "AUCUN"}</td></tr>
-        <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Montant</td><td style="color:#fff;">${(session.amount_total / 100).toFixed(2)}€</td></tr>
+        <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Montant</td><td style="color:#fff;">${(session.amount_total / 100).toFixed(2)}EUR</td></tr>
       </table>
     </div>`;
 }
