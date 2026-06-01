@@ -1,7 +1,4 @@
 // ─── get-apple-code.mjs ───────────────────────────────────────────────────
-// Helper : récupère + marque un code Apple dans Google Sheets
-// À placer dans netlify/functions/
-// ─────────────────────────────────────────────────────────────────────────
 import { google } from "googleapis";
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -10,6 +7,12 @@ const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY_BASE64
   ? Buffer.from(process.env.GOOGLE_PRIVATE_KEY_BASE64, "base64").toString("utf8")
   : process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
+// Debug logs
+console.log("SHEET_ID:", SHEET_ID);
+console.log("EMAIL:", SERVICE_ACCOUNT_EMAIL);
+console.log("KEY_START:", PRIVATE_KEY?.substring(0, 60));
+console.log("KEY_END:", PRIVATE_KEY?.substring(PRIVATE_KEY.length - 30));
+
 async function getSheetClient() {
   const auth = new google.auth.JWT(
     SERVICE_ACCOUNT_EMAIL,
@@ -17,13 +20,13 @@ async function getSheetClient() {
     PRIVATE_KEY,
     ["https://www.googleapis.com/auth/spreadsheets"]
   );
+  await auth.authorize();
   return google.sheets({ version: "v4", auth });
 }
 
 export async function getAndMarkAppleCode(email) {
   const sheets = await getSheetClient();
 
-  // Lire toutes les lignes
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
     range: "Sheet1!A:D",
@@ -31,7 +34,6 @@ export async function getAndMarkAppleCode(email) {
 
   const rows = res.data.values || [];
 
-  // Trouver le premier code non utilisé (colonne B = FALSE ou vide)
   let targetRow = -1;
   let targetCode = null;
 
@@ -39,7 +41,7 @@ export async function getAndMarkAppleCode(email) {
     const code = rows[i][0];
     const used = rows[i][1];
     if (code && (!used || used.toUpperCase() === "FALSE")) {
-      targetRow = i + 1; // +1 car Google Sheets commence à 1
+      targetRow = i + 1;
       targetCode = code;
       break;
     }
@@ -49,7 +51,6 @@ export async function getAndMarkAppleCode(email) {
 
   const now = new Date().toISOString().slice(0, 19).replace("T", " ");
 
-  // Mettre à jour B, C, D
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID,
     range: `Sheet1!B${targetRow}:D${targetRow}`,
@@ -57,7 +58,6 @@ export async function getAndMarkAppleCode(email) {
     requestBody: { values: [["TRUE", now, email]] },
   });
 
-  // Passer la ligne en rouge
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId: SHEET_ID,
     requestBody: {
