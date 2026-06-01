@@ -1,6 +1,4 @@
 // ─── club-webhook.mjs ─────────────────────────────────────────────────────
-// Webhook Stripe clubs — utilise Google Sheets pour les codes Apple
-// ─────────────────────────────────────────────────────────────────────────
 import Stripe from "stripe";
 import { getStore } from "@netlify/blobs";
 import { getAndMarkAppleCode } from "./get-apple-code.mjs";
@@ -8,6 +6,14 @@ import { getAndMarkAppleCode } from "./get-apple-code.mjs";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const MAILERLITE_API_KEY = process.env.MAILERLITE_API_KEY;
 const ADMIN_EMAIL = "admin@myflypath.fr";
+
+function getClubStore() {
+  return getStore({
+    name: "clubs",
+    siteID: process.env.NETLIFY_SITE_ID,
+    token: process.env.NETLIFY_TOKEN,
+  });
+}
 
 export const handler = async (event) => {
   const sig = event.headers["stripe-signature"];
@@ -32,11 +38,11 @@ export const handler = async (event) => {
 
   const email = customer_email || session.customer_email;
 
-  // Récupérer et marquer un code Apple dans Google Sheets
+  // 1. Récupérer un code Apple depuis Netlify Blobs
   const appleCode = await getAndMarkAppleCode(email);
 
-  // Mettre à jour les stats du club
-  const store = getStore("clubs");
+  // 2. Mettre à jour les stats du club
+  const store = getClubStore();
   try {
     const raw = await store.get(club_slug);
     if (raw) {
@@ -47,17 +53,17 @@ export const handler = async (event) => {
     }
   } catch {}
 
-  // Mail client
+  // 3. Mail client
   await sendMail({
     to: email,
-    subject: "✈️ Bienvenue sur MyFlyPath Pro !",
+    subject: "Bienvenue sur MyFlyPath Pro !",
     html: buildClientEmail({ club_nom, appleCode }),
   });
 
-  // Mail admin
+  // 4. Mail admin
   await sendMail({
     to: ADMIN_EMAIL,
-    subject: `💳 Nouvel achat Club — ${club_nom}`,
+    subject: `Nouvel achat Club — ${club_nom}`,
     html: buildAdminEmail({ email, club_slug, club_nom, appleCode, session }),
   });
 
@@ -78,15 +84,15 @@ async function sendMail({ to, subject, html }) {
 function buildClientEmail({ club_nom, appleCode }) {
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#13141f;color:#fff;padding:40px;border-radius:16px;">
-      <h1 style="color:#FF9500;">✈️ Bienvenue sur MyFlyPath Pro !</h1>
+      <h1 style="color:#FF9500;">Bienvenue sur MyFlyPath Pro !</h1>
       <p>Merci pour votre achat via <strong>${club_nom}</strong>.</p>
       ${appleCode ? `
         <div style="background:#1e1f2e;border:1px solid rgba(255,149,0,0.3);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
           <p style="color:rgba(255,255,255,0.6);margin:0 0 8px;">Votre code d'activation :</p>
           <p style="font-size:28px;font-weight:900;color:#FF9500;letter-spacing:4px;margin:0;">${appleCode}</p>
-          <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:8px 0 0;">À saisir dans l'App Store</p>
+          <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:8px 0 0;">A saisir dans l'App Store</p>
         </div>
-      ` : `<p style="color:#FF4444;">⚠️ Notre équipe vous contactera sous 24h.</p>`}
+      ` : `<p style="color:#FF4444;">Notre equipe vous contactera sous 24h avec votre code.</p>`}
       <p>Questions ? <a href="mailto:admin@myflypath.fr" style="color:#FF9500;">admin@myflypath.fr</a></p>
     </div>`;
 }
@@ -94,7 +100,7 @@ function buildClientEmail({ club_nom, appleCode }) {
 function buildAdminEmail({ email, club_slug, club_nom, appleCode, session }) {
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#13141f;color:#fff;padding:40px;border-radius:16px;">
-      <h1 style="color:#FF9500;">💳 Nouvel achat Club</h1>
+      <h1 style="color:#FF9500;">Nouvel achat Club</h1>
       <table style="width:100%;border-collapse:collapse;">
         <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Client</td><td style="color:#fff;font-weight:bold;">${email}</td></tr>
         <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Club</td><td style="color:#FF9500;font-weight:bold;">${club_nom}</td></tr>
