@@ -1,9 +1,16 @@
 // ─── get-apple-code.mjs ───────────────────────────────────────────────────
 import { google } from "googleapis";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+// Lire la clé privée depuis le fichier .pem
+const PRIVATE_KEY = readFileSync(
+  resolve(process.cwd(), "netlify/functions/private-key.pem"),
+  "utf8"
+);
 
 async function getSheetClient() {
   const auth = new google.auth.GoogleAuth({
