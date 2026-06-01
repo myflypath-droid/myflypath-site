@@ -1,14 +1,18 @@
 // ─── get-apple-code.mjs ───────────────────────────────────────────────────
 import { google } from "googleapis";
 import { readFileSync } from "fs";
-import { resolve } from "path";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
 
 // Lire la clé privée depuis le fichier .pem
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const PRIVATE_KEY = readFileSync(
-  resolve(process.cwd(), "netlify/functions/private-key.pem"),
+  resolve(__dirname, "private-key.pem"),
   "utf8"
 );
 
