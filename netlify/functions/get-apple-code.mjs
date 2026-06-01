@@ -1,23 +1,30 @@
 // ─── get-apple-code.mjs ───────────────────────────────────────────────────
+// Lit les credentials depuis un fichier local (non pushé sur GitHub)
+// ─────────────────────────────────────────────────────────────────────────
 import { google } from "googleapis";
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
-const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY_BASE64
-  ? Buffer.from(process.env.GOOGLE_PRIVATE_KEY_BASE64, "base64").toString("utf8")
-  : process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
-// Debug logs
-console.log("SHEET_ID:", SHEET_ID);
-console.log("EMAIL:", SERVICE_ACCOUNT_EMAIL);
-console.log("KEY_START:", PRIVATE_KEY?.substring(0, 60));
-console.log("KEY_END:", PRIVATE_KEY?.substring(PRIVATE_KEY.length - 30));
+// Lire les credentials depuis le fichier JSON local
+let credentials;
+try {
+  const credsPath = join(__dirname, "google-credentials.json");
+  credentials = JSON.parse(readFileSync(credsPath, "utf8"));
+} catch (err) {
+  console.error("Impossible de lire google-credentials.json:", err.message);
+  throw new Error("Google credentials manquants");
+}
 
 async function getSheetClient() {
   const auth = new google.auth.JWT(
-    SERVICE_ACCOUNT_EMAIL,
+    credentials.client_email,
     null,
-    PRIVATE_KEY,
+    credentials.private_key,
     ["https://www.googleapis.com/auth/spreadsheets"]
   );
   await auth.authorize();
