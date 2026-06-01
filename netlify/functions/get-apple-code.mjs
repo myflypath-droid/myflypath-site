@@ -6,7 +6,9 @@ import { google } from "googleapis";
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY_BASE64
+  ? Buffer.from(process.env.GOOGLE_PRIVATE_KEY_BASE64, "base64").toString("utf8")
+  : process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
 async function getSheetClient() {
   const auth = new google.auth.JWT(
