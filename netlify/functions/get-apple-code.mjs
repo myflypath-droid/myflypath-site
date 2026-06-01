@@ -1,25 +1,15 @@
 // ─── get-apple-code.mjs ───────────────────────────────────────────────────
 import { google } from "googleapis";
-import { readFileSync } from "fs";
-import { resolve } from "path";
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
-
-// Lire les credentials depuis le fichier JSON local
-let credentials;
-try {
-  const credsPath = resolve(process.cwd(), "netlify/functions/google-credentials.json");
-  credentials = JSON.parse(readFileSync(credsPath, "utf8"));
-} catch (err) {
-  console.error("Impossible de lire google-credentials.json:", err.message);
-  throw new Error("Google credentials manquants");
-}
+const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
 async function getSheetClient() {
   const auth = new google.auth.JWT(
-    credentials.client_email,
+    SERVICE_ACCOUNT_EMAIL,
     null,
-    credentials.private_key,
+    PRIVATE_KEY,
     ["https://www.googleapis.com/auth/spreadsheets"]
   );
   await auth.authorize();
