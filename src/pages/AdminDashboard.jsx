@@ -59,6 +59,10 @@ export default function AdminDashboard() {
   const [loadingCodes, setLoadingCodes] = useState(false);
   const [loadMsg, setLoadMsg] = useState("");
 
+  // Selection codes
+  const [selectedCodes, setSelectedCodes] = useState([]);
+  const [deletingCodes, setDeletingCodes] = useState(false);
+
   const fetchAll = async (pwd) => {
     setLoading(true);
     try {
@@ -140,9 +144,8 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (data.ok) {
-        setLoadMsg(`${data.added} codes ajoutes ! Total disponible : ${data.available}`);
-        setNewCodesText("");
-        setExpiresAt("");
+        setLoadMsg(`${data.added} codes ajoutes ! Disponibles : ${data.available}`);
+        setNewCodesText(""); setExpiresAt("");
         fetchAll(password);
       } else {
         setLoadMsg(`Erreur : ${data.error}`);
@@ -153,12 +156,47 @@ export default function AdminDashboard() {
     setLoadingCodes(false);
   };
 
+  const handleDeleteSelected = async () => {
+    if (!confirm(`Supprimer ${selectedCodes.length} code(s) ?`)) return;
+    setDeletingCodes(true);
+    try {
+      const res = await fetch("/.netlify/functions/delete-apple-codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, codes: selectedCodes }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setSelectedCodes([]);
+        fetchAll(password);
+      }
+    } catch {}
+    setDeletingCodes(false);
+  };
+
+  const toggleSelectCode = (code) => {
+    setSelectedCodes(prev =>
+      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    );
+  };
+
+  const toggleSelectAll = (codes) => {
+    if (selectedCodes.length === codes.length) {
+      setSelectedCodes([]);
+    } else {
+      setSelectedCodes(codes.map(c => c.code));
+    }
+  };
+
   const allCodes = codesData?.codes || [];
   const usedCodes = allCodes.filter(c => c.used);
   const availableCodes = allCodes.filter(c => !c.used);
+  const now = new Date();
+  const expiredCodes = availableCodes.filter(c => c.expiresAt && new Date(c.expiresAt) < now);
+  const validCodes = availableCodes.filter(c => !c.expiresAt || new Date(c.expiresAt) >= now);
+
   const totalVisites = clubs.reduce((s, c) => s + c.visites, 0);
   const totalAchats = clubs.reduce((s, c) => s + c.achats, 0);
-  const totalRevenue = clubs.reduce((s, c) => s + c.revenue, 0);
   const globalConversion = totalVisites > 0 ? ((totalAchats / totalVisites) * 100).toFixed(1) : "0.0";
   const allClubNames = [...new Set(usedCodes.map(c => c.club).filter(Boolean))];
   const filteredByTime = filterOrders(usedCodes, filter);
@@ -167,7 +205,7 @@ export default function AdminDashboard() {
 
   const s = { background: '#13141f', color: '#fff' };
   const card = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' };
-  const input = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none' };
+  const inp = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none' };
 
   if (!authed) {
     return (
@@ -179,8 +217,7 @@ export default function AdminDashboard() {
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mot de passe" required className="w-full rounded-2xl px-4 py-3"
-              style={input} />
+              placeholder="Mot de passe" required className="w-full rounded-2xl px-4 py-3" style={inp} />
             {authError && <p className="text-sm text-center" style={{ color: '#FF6B6B' }}>{authError}</p>}
             <button type="submit" disabled={loading} className="w-full font-black py-3.5 rounded-2xl"
               style={{ background: '#FF9500', color: '#000' }}>
@@ -213,7 +250,7 @@ export default function AdminDashboard() {
           {[
             { id: "clubs", label: "Clubs" },
             { id: "codes", label: `Ventes (${usedCodes.length})` },
-            { id: "stock", label: `Stock (${availableCodes.length})` },
+            { id: "stock", label: `Stock (${validCodes.length})` },
           ].map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
@@ -244,9 +281,9 @@ export default function AdminDashboard() {
               <h2 className="text-lg font-black text-white mb-4">Ajouter un club</h2>
               <form onSubmit={handleAddClub} className="flex gap-3 flex-wrap">
                 <input type="text" value={newSlug} onChange={(e) => setNewSlug(e.target.value)}
-                  placeholder="slug (ex: capaero)" required className="flex-1 min-w-40 rounded-xl px-4 py-2.5 text-sm text-white" style={input} />
+                  placeholder="slug (ex: capaero)" required className="flex-1 min-w-40 rounded-xl px-4 py-2.5 text-sm text-white" style={inp} />
                 <input type="text" value={newNom} onChange={(e) => setNewNom(e.target.value)}
-                  placeholder="Nom affiche (ex: CapAero)" required className="flex-1 min-w-40 rounded-xl px-4 py-2.5 text-sm text-white" style={input} />
+                  placeholder="Nom affiche (ex: CapAero)" required className="flex-1 min-w-40 rounded-xl px-4 py-2.5 text-sm text-white" style={inp} />
                 <button type="submit" className="px-6 py-2.5 rounded-xl text-sm font-black" style={{ background: '#FF9500', color: '#000' }}>Creer</button>
               </form>
               {addMsg && <p className="mt-3 text-sm" style={{ color: addMsg.startsWith('Club') ? '#22c55e' : '#FF6B6B' }}>{addMsg}</p>}
@@ -312,8 +349,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
               <select value={clubFilter} onChange={(e) => setClubFilter(e.target.value)}
-                className="rounded-xl px-4 py-2 text-sm font-bold"
-                style={{ ...input, background: 'rgba(255,255,255,0.06)' }}>
+                className="rounded-xl px-4 py-2 text-sm font-bold" style={{ ...inp, background: 'rgba(255,255,255,0.06)' }}>
                 <option value="all">Tous les clubs</option>
                 {allClubNames.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -331,7 +367,7 @@ export default function AdminDashboard() {
               {[
                 { label: "Ventes", value: filteredOrders.length, color: '#FF9500' },
                 { label: "Revenu", value: `${filteredRevenue.toFixed(2)}€`, color: '#22c55e' },
-                { label: "Codes restants", value: availableCodes.length, color: '#38bdf8' },
+                { label: "Codes restants", value: validCodes.length, color: '#38bdf8' },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-2xl p-5" style={card}>
                   <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>{stat.label}</p>
@@ -351,7 +387,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {filteredOrders.length === 0 ? (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Aucune vente pour cette periode</td></tr>
+                    <tr><td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Aucune vente</td></tr>
                   ) : filteredOrders.map((o, i) => (
                     <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
                       <td className="px-4 py-3 font-mono text-sm font-bold" style={{ color: '#FF9500' }}>{o.code}</td>
@@ -372,39 +408,112 @@ export default function AdminDashboard() {
         {/* ── STOCK ── */}
         {activeTab === "stock" && (
           <div className="space-y-6">
-            <div className="rounded-2xl p-8 text-center" style={card}>
-              <p className="text-6xl font-black mb-4" style={{ color: availableCodes.length > 10 ? '#22c55e' : '#FF6B6B' }}>
-                {availableCodes.length}
-              </p>
-              <p className="text-lg font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>codes Apple disponibles</p>
-              <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.3)' }}>{usedCodes.length} utilises · {allCodes.length} au total</p>
-              {availableCodes.length <= 10 && (
-                <div className="mt-6 rounded-xl p-4 mx-auto max-w-sm" style={{ background: 'rgba(255,100,100,0.1)', border: '1px solid rgba(255,100,100,0.3)' }}>
-                  <p className="font-bold" style={{ color: '#FF6B6B' }}>Stock faible — rechargez vos codes !</p>
+
+            {/* Compteurs */}
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: "Disponibles", value: validCodes.length, color: '#22c55e' },
+                { label: "Expires", value: expiredCodes.length, color: '#FF6B6B' },
+                { label: "Utilises", value: usedCodes.length, color: 'rgba(255,255,255,0.4)' },
+              ].map((stat) => (
+                <div key={stat.label} className="rounded-2xl p-5 text-center" style={card}>
+                  <p className="text-4xl font-black mb-1" style={{ color: stat.color }}>{stat.value}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>{stat.label}</p>
                 </div>
-              )}
+              ))}
             </div>
 
+            {validCodes.length <= 10 && (
+              <div className="rounded-xl p-4" style={{ background: 'rgba(255,100,100,0.1)', border: '1px solid rgba(255,100,100,0.3)' }}>
+                <p className="font-bold text-center" style={{ color: '#FF6B6B' }}>Stock faible — rechargez vos codes !</p>
+              </div>
+            )}
+
+            {/* Tableau codes disponibles */}
+            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="flex items-center justify-between px-4 py-3" style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedCodes.length === availableCodes.length && availableCodes.length > 0}
+                    onChange={() => toggleSelectAll(availableCodes)}
+                    className="w-4 h-4 rounded"
+                    style={{ accentColor: '#FF9500' }}
+                  />
+                  <span className="text-sm font-bold text-white">
+                    {selectedCodes.length > 0 ? `${selectedCodes.length} selectionne(s)` : `${availableCodes.length} codes disponibles`}
+                  </span>
+                </div>
+                {selectedCodes.length > 0 && (
+                  <button onClick={handleDeleteSelected} disabled={deletingCodes}
+                    className="px-4 py-1.5 rounded-lg text-xs font-black"
+                    style={{ background: 'rgba(255,100,100,0.2)', color: '#FF6B6B', border: '1px solid rgba(255,100,100,0.3)' }}>
+                    {deletingCodes ? "Suppression..." : `Supprimer (${selectedCodes.length})`}
+                  </button>
+                )}
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                    <th className="px-4 py-3 w-10"></th>
+                    {["Code Apple", "Expiration", "Statut"].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {availableCodes.length === 0 ? (
+                    <tr><td colSpan={4} className="px-4 py-8 text-center text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Aucun code disponible</td></tr>
+                  ) : availableCodes.map((c, i) => {
+                    const expired = c.expiresAt && new Date(c.expiresAt) < now;
+                    const isSelected = selectedCodes.includes(c.code);
+                    return (
+                      <tr key={i} style={{
+                        borderTop: '1px solid rgba(255,255,255,0.06)',
+                        background: isSelected ? 'rgba(255,149,0,0.06)' : i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
+                      }}>
+                        <td className="px-4 py-3">
+                          <input type="checkbox" checked={isSelected} onChange={() => toggleSelectCode(c.code)}
+                            className="w-4 h-4 rounded" style={{ accentColor: '#FF9500' }} />
+                        </td>
+                        <td className="px-4 py-3 font-mono font-bold text-sm" style={{ color: expired ? 'rgba(255,255,255,0.3)' : '#fff' }}>
+                          {c.code}
+                        </td>
+                        <td className="px-4 py-3 text-sm" style={{ color: expired ? '#FF6B6B' : 'rgba(255,255,255,0.5)' }}>
+                          {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString("fr-FR") : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-1 rounded-full text-xs font-bold"
+                            style={{
+                              background: expired ? 'rgba(255,100,100,0.15)' : 'rgba(34,197,94,0.15)',
+                              color: expired ? '#FF6B6B' : '#22c55e',
+                            }}>
+                            {expired ? "Expire" : "Disponible"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Formulaire ajout codes */}
             <div className="rounded-2xl p-6" style={card}>
               <h2 className="text-lg font-black text-white mb-1">Charger de nouveaux codes</h2>
               <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>Collez vos codes Apple, un par ligne</p>
               <div className="space-y-4">
-                <textarea
-                  value={newCodesText}
-                  onChange={(e) => setNewCodesText(e.target.value)}
+                <textarea value={newCodesText} onChange={(e) => setNewCodesText(e.target.value)}
                   placeholder={"XXXX-XXXX-XXXX-XXXX\nXXXX-XXXX-XXXX-XXXX\nXXXX-XXXX-XXXX-XXXX"}
-                  rows={8}
-                  className="w-full rounded-2xl px-4 py-3 text-sm font-mono text-white"
-                  style={{ ...input, resize: 'vertical' }}
-                />
+                  rows={8} className="w-full rounded-2xl px-4 py-3 text-sm font-mono text-white"
+                  style={{ ...inp, resize: 'vertical' }} />
                 <div className="flex gap-4 items-end">
                   <div className="flex-1">
                     <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
                       Date d'expiration
                     </label>
                     <input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)}
-                      className="w-full rounded-xl px-4 py-2.5"
-                      style={{ ...input, colorScheme: 'dark' }} />
+                      className="w-full rounded-xl px-4 py-2.5" style={{ ...inp, colorScheme: 'dark' }} />
                   </div>
                   <button onClick={handleLoadCodes} disabled={!newCodesText.trim() || loadingCodes}
                     className="px-6 py-2.5 rounded-xl font-black text-sm"
