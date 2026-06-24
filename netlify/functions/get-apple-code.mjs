@@ -1,16 +1,28 @@
 // ─── get-apple-code.mjs ───────────────────────────────────────────────────
 import { getStore } from "@netlify/blobs";
 
-function getCodesStore() {
+// Map d'un "type" d'offre vers le nom du store de codes correspondant.
+// "pro"      → codes Apple abonnement annuel (store existant "apple-codes")
+// "logbook"  → codes Apple Logbook 6 mois     (nouveau store "logbook-codes")
+export const CODE_STORES = {
+  pro: "apple-codes",
+  logbook: "logbook-codes",
+};
+
+export function resolveStoreName(type) {
+  return CODE_STORES[type] || CODE_STORES.pro;
+}
+
+function getCodesStore(type = "pro") {
   return getStore({
-    name: "apple-codes",
+    name: resolveStoreName(type),
     siteID: process.env.NETLIFY_SITE_ID,
     token: process.env.NETLIFY_TOKEN,
   });
 }
 
-export async function getAndMarkAppleCode(email, club, amount) {
-  const store = getCodesStore();
+export async function getAndMarkAppleCode(email, club, amount, type = "pro") {
+  const store = getCodesStore(type);
 
   let codesData;
   try {

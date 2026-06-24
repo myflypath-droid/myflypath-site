@@ -12,18 +12,33 @@ function getStore_configured(name) {
   });
 }
 
-const PRICE = 50;
+// Offres disponibles sur la page club.
+// unit_amount est en centimes (prix réels de production).
+const PLANS = {
+  pro: {
+    type: "pro",
+    unit_amount: 8999, // 89,99 €
+    name: "MyFlyPath Pro — Abonnement Annuel",
+  },
+  logbook: {
+    type: "logbook",
+    unit_amount: 1999, // 19,99 €
+    name: "MyFlyPath Logbook — 6 mois",
+  },
+};
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const { slug, email } = JSON.parse(event.body || "{}");
+  const { slug, email, plan } = JSON.parse(event.body || "{}");
 
   if (!slug || !email) {
     return { statusCode: 400, body: JSON.stringify({ error: "Slug et email requis" }) };
   }
+
+  const selectedPlan = PLANS[plan] || PLANS.pro;
 
   const store = getStore_configured("clubs");
   let club = null;
@@ -46,11 +61,11 @@ export const handler = async (event) => {
       price_data: {
         currency: "eur",
         product_data: {
-          name: "MyFlyPath Pro — Abonnement Annuel",
+          name: selectedPlan.name,
           description: `Via ${club.nom}`,
           images: ["https://myflypath.fr/og-image.png"],
         },
-        unit_amount: PRICE,
+        unit_amount: selectedPlan.unit_amount,
       },
       quantity: 1,
     }],
@@ -59,6 +74,7 @@ export const handler = async (event) => {
       club_nom: club.nom,
       customer_email: email,
       source: "club_page",
+      plan: selectedPlan.type,
     },
     success_url: `${baseUrl}/club/${slug}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/club/${slug}`,

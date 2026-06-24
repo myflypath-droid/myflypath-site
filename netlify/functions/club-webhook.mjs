@@ -32,16 +32,20 @@ export const handler = async (event) => {
   }
 
   const session = stripeEvent.data.object;
-  const { club_slug, club_nom, customer_email } = session.metadata;
+  const { club_slug, club_nom, customer_email, plan } = session.metadata;
 
   if (!club_slug) return { statusCode: 200, body: "Not a club order" };
 
   const email = customer_email || session.customer_email;
   const amount = session.amount_total / 100;
+  const planType = plan === "logbook" ? "logbook" : "pro";
+  const offerLabel = planType === "logbook"
+    ? "MyFlyPath Logbook — 6 mois"
+    : "MyFlyPath Pro — Abonnement Annuel";
 
-  // 1. Récupérer un code Apple avec club et montant
-  const appleCode = await getAndMarkAppleCode(email, club_nom, amount);
-  console.log("Apple code:", appleCode);
+  // 1. Récupérer un code dans le bon store selon l'offre (Pro ou Logbook)
+  const appleCode = await getAndMarkAppleCode(email, club_nom, amount, planType);
+  console.log("Code:", appleCode, "| plan:", planType);
 
   // 2. Mettre à jour les stats du club
   const store = getClubStore();
@@ -60,15 +64,17 @@ export const handler = async (event) => {
   // 3. Mail client
   await sendMail({
     to: email,
-    subject: "Bienvenue sur MyFlyPath Pro !",
-    html: buildClientEmail({ club_nom, appleCode }),
+    subject: planType === "logbook"
+      ? "Votre accès MyFlyPath Logbook (6 mois) !"
+      : "Bienvenue sur MyFlyPath Pro !",
+    html: buildClientEmail({ club_nom, appleCode, offerLabel, planType }),
   });
 
   // 4. Mail admin
   await sendMail({
     to: ADMIN_EMAIL,
-    subject: `Nouvel achat Club — ${club_nom}`,
-    html: buildAdminEmail({ email, club_slug, club_nom, appleCode, session }),
+    subject: `Nouvel achat Club — ${club_nom} (${offerLabel})`,
+    html: buildAdminEmail({ email, club_slug, club_nom, appleCode, session, offerLabel }),
   });
 
   return { statusCode: 200, body: "OK" };
@@ -93,11 +99,14 @@ async function sendMail({ to, subject, html }) {
   return data;
 }
 
-function buildClientEmail({ club_nom, appleCode }) {
+function buildClientEmail({ club_nom, appleCode, offerLabel, planType }) {
+  const title = planType === "logbook"
+    ? "Votre accès Logbook 6 mois est prêt !"
+    : "Bienvenue sur MyFlyPath Pro !";
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#13141f;color:#fff;padding:40px;border-radius:16px;">
-      <h1 style="color:#FF9500;">Bienvenue sur MyFlyPath Pro !</h1>
-      <p>Merci pour votre achat via <strong>${club_nom}</strong>.</p>
+      <h1 style="color:#FF9500;">${title}</h1>
+      <p>Merci pour votre achat <strong>${offerLabel}</strong> via <strong>${club_nom}</strong>.</p>
       ${appleCode ? `
         <div style="background:#1e1f2e;border:1px solid rgba(255,149,0,0.3);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
           <p style="color:rgba(255,255,255,0.6);margin:0 0 8px;">Votre code d'activation :</p>
@@ -109,12 +118,13 @@ function buildClientEmail({ club_nom, appleCode }) {
     </div>`;
 }
 
-function buildAdminEmail({ email, club_slug, club_nom, appleCode, session }) {
+function buildAdminEmail({ email, club_slug, club_nom, appleCode, session, offerLabel }) {
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#13141f;color:#fff;padding:40px;border-radius:16px;">
       <h1 style="color:#FF9500;">Nouvel achat Club</h1>
       <table style="width:100%;border-collapse:collapse;">
         <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Client</td><td style="color:#fff;font-weight:bold;">${email}</td></tr>
+        <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Offre</td><td style="color:#fff;font-weight:bold;">${offerLabel}</td></tr>
         <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Club</td><td style="color:#FF9500;font-weight:bold;">${club_nom}</td></tr>
         <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Slug</td><td style="color:#fff;">${club_slug}</td></tr>
         <tr><td style="padding:8px 0;color:rgba(255,255,255,0.5);">Code Apple</td><td style="color:#4CAF50;font-weight:bold;">${appleCode || "AUCUN"}</td></tr>

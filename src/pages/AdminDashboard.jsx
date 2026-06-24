@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   const [authError, setAuthError] = useState("");
   const [clubs, setClubs] = useState([]);
   const [codesData, setCodesData] = useState(null);
+  const [logbookCodesData, setLogbookCodesData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("clubs");
   const [filter, setFilter] = useState("all");
@@ -66,7 +67,7 @@ export default function AdminDashboard() {
   const fetchAll = async (pwd) => {
     setLoading(true);
     try {
-      const [statsRes, codesRes] = await Promise.all([
+      const [statsRes, codesRes, logbookRes] = await Promise.all([
         fetch("/.netlify/functions/club-stats", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -75,14 +76,21 @@ export default function AdminDashboard() {
         fetch("/.netlify/functions/get-codes-admin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password: pwd }),
+          body: JSON.stringify({ password: pwd, type: "pro" }),
+        }),
+        fetch("/.netlify/functions/get-codes-admin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: pwd, type: "logbook" }),
         }),
       ]);
       const statsData = await statsRes.json();
       const codesJson = codesRes.ok ? await codesRes.json() : { codes: [] };
+      const logbookJson = logbookRes.ok ? await logbookRes.json() : { codes: [] };
       if (statsRes.ok) {
         setClubs(statsData.clubs || []);
         setCodesData(codesJson);
+        setLogbookCodesData(logbookJson);
         setAuthed(true);
         setAuthError("");
       } else {
@@ -140,7 +148,7 @@ export default function AdminDashboard() {
       const res = await fetch("/.netlify/functions/load-apple-codes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, codes: newCodesText, expiresAt: expiresAt || null }),
+        body: JSON.stringify({ password, codes: newCodesText, expiresAt: expiresAt || null, type: codesType }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -163,7 +171,7 @@ export default function AdminDashboard() {
       const res = await fetch("/.netlify/functions/delete-apple-codes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, codes: selectedCodes }),
+        body: JSON.stringify({ password, codes: selectedCodes, type: codesType }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -188,12 +196,27 @@ export default function AdminDashboard() {
     }
   };
 
-  const allCodes = codesData?.codes || [];
+  const now = new Date();
+
+  // Type de codes lié à l'onglet actif (pro = abo annuel, logbook = 6 mois)
+  const codesType = (activeTab === "codes-logbook" || activeTab === "stock-logbook") ? "logbook" : "pro";
+  const isLogbookTab = codesType === "logbook";
+
+  // Compteurs par type pour les libellés d'onglets
+  const proAll = codesData?.codes || [];
+  const logbookAll = logbookCodesData?.codes || [];
+  const proUsed = proAll.filter(c => c.used).length;
+  const logbookUsed = logbookAll.filter(c => c.used).length;
+  const proValid = proAll.filter(c => !c.used && (!c.expiresAt || new Date(c.expiresAt) >= now)).length;
+  const logbookValid = logbookAll.filter(c => !c.used && (!c.expiresAt || new Date(c.expiresAt) >= now)).length;
+
+  // Dataset actif
+  const allCodes = isLogbookTab ? logbookAll : proAll;
   const usedCodes = allCodes.filter(c => c.used);
   const availableCodes = allCodes.filter(c => !c.used);
-  const now = new Date();
   const expiredCodes = availableCodes.filter(c => c.expiresAt && new Date(c.expiresAt) < now);
   const validCodes = availableCodes.filter(c => !c.expiresAt || new Date(c.expiresAt) >= now);
+  const codeTypeLabel = isLogbookTab ? "Logbook 6 mois" : "Pro annuel";
 
   const totalVisites = clubs.reduce((s, c) => s + c.visites, 0);
   const totalAchats = clubs.reduce((s, c) => s + c.achats, 0);
@@ -249,10 +272,12 @@ export default function AdminDashboard() {
         <div className="flex gap-2 mb-8 p-1 rounded-2xl w-fit" style={{ background: 'rgba(255,255,255,0.05)' }}>
           {[
             { id: "clubs", label: "Clubs" },
-            { id: "codes", label: `Ventes (${usedCodes.length})` },
-            { id: "stock", label: `Stock (${validCodes.length})` },
+            { id: "codes-pro", label: `Ventes Pro (${proUsed})` },
+            { id: "stock-pro", label: `Stock Pro (${proValid})` },
+            { id: "codes-logbook", label: `Ventes Logbook (${logbookUsed})` },
+            { id: "stock-logbook", label: `Stock Logbook (${logbookValid})` },
           ].map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSelectedCodes([]); }}
               className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
               style={{ background: activeTab === tab.id ? '#FF9500' : 'transparent', color: activeTab === tab.id ? '#000' : 'rgba(255,255,255,0.5)' }}>
               {tab.label}
@@ -336,8 +361,14 @@ export default function AdminDashboard() {
         )}
 
         {/* ── VENTES ── */}
-        {activeTab === "codes" && (
+        {(activeTab === "codes-pro" || activeTab === "codes-logbook") && (
           <>
+            <div className="mb-4">
+              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider"
+                style={{ background: 'rgba(255,149,0,0.15)', color: '#FF9500' }}>
+                {codeTypeLabel}
+              </span>
+            </div>
             <div className="flex items-center gap-3 mb-6 flex-wrap">
               <div className="flex gap-2 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)' }}>
                 {FILTERS.map((f) => (
@@ -406,8 +437,15 @@ export default function AdminDashboard() {
         )}
 
         {/* ── STOCK ── */}
-        {activeTab === "stock" && (
+        {(activeTab === "stock-pro" || activeTab === "stock-logbook") && (
           <div className="space-y-6">
+
+            <div>
+              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider"
+                style={{ background: 'rgba(255,149,0,0.15)', color: '#FF9500' }}>
+                {codeTypeLabel}
+              </span>
+            </div>
 
             {/* Compteurs */}
             <div className="grid grid-cols-3 gap-4">
@@ -500,8 +538,8 @@ export default function AdminDashboard() {
 
             {/* Formulaire ajout codes */}
             <div className="rounded-2xl p-6" style={card}>
-              <h2 className="text-lg font-black text-white mb-1">Charger de nouveaux codes</h2>
-              <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>Collez vos codes Apple, un par ligne</p>
+              <h2 className="text-lg font-black text-white mb-1">Charger de nouveaux codes — {codeTypeLabel}</h2>
+              <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>Collez vos codes Apple ({codeTypeLabel}), un par ligne</p>
               <div className="space-y-4">
                 <textarea value={newCodesText} onChange={(e) => setNewCodesText(e.target.value)}
                   placeholder={"XXXX-XXXX-XXXX-XXXX\nXXXX-XXXX-XXXX-XXXX\nXXXX-XXXX-XXXX-XXXX"}

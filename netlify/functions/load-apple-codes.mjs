@@ -1,12 +1,13 @@
 // ─── load-apple-codes.mjs ─────────────────────────────────────────────────
 // POST /.netlify/functions/load-apple-codes
-// Body : { password, codes: "CODE1\nCODE2\n...", expiresAt: "2026-12-31" }
+// Body : { password, codes: "CODE1\nCODE2\n...", expiresAt: "2026-12-31", type: "pro" | "logbook" }
 // ─────────────────────────────────────────────────────────────────────────
 import { getStore } from "@netlify/blobs";
+import { resolveStoreName } from "./get-apple-code.mjs";
 
-function getCodesStore() {
+function getCodesStore(type) {
   return getStore({
-    name: "apple-codes",
+    name: resolveStoreName(type),
     siteID: process.env.NETLIFY_SITE_ID,
     token: process.env.NETLIFY_TOKEN,
   });
@@ -17,7 +18,7 @@ export const handler = async (event) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const { password, codes, expiresAt } = JSON.parse(event.body || "{}");
+  const { password, codes, expiresAt, type } = JSON.parse(event.body || "{}");
 
   if (password !== process.env.ADMIN_PASSWORD) {
     return { statusCode: 401, body: JSON.stringify({ error: "Non autorise" }) };
@@ -37,7 +38,7 @@ export const handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Aucun code valide" }) };
   }
 
-  const store = getCodesStore();
+  const store = getCodesStore(type);
 
   // Récupérer les codes existants
   let existing = { codes: [] };
