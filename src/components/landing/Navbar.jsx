@@ -44,6 +44,7 @@ export default function Navbar() {
             ["My Univers", "#myunivers"],
             ["Tarifs", "#pricing"],
             ["Contact", "#contact"],
+            ["RDV", "#rdv"],
           ].map(([label, href]) => (
             <li key={href}>
               <a href={href} className="text-sm text-white/60 hover:text-white transition-colors duration-200 font-medium">

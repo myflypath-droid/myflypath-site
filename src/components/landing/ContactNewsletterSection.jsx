@@ -111,6 +111,31 @@ export default function ContactNewsletterSection() {
           </div>
 
         </div>
+
+        {/* ── PRENDRE RDV ── */}
+        <div id="rdv" className="reveal reveal-d1 mt-6 rounded-3xl p-8 md:p-10 flex flex-col md:flex-row md:items-center gap-6"
+          style={{ background: 'rgba(255,149,0,0.07)', border: '1px solid rgba(255,149,0,0.25)' }}>
+          <div className="flex items-center gap-4 flex-1">
+            <span className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+              style={{ background: 'rgba(255,149,0,0.15)' }}>📅</span>
+            <div>
+              <h3 className="font-black text-xl text-white">Prendre RDV avec nous</h3>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Échange en visio avec l'équipe — démo, partenariat club ou conseils formation.
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://calendar.app.google/N7A6N7uRYAueF1zTA"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 font-bold px-7 py-3.5 rounded-2xl transition-transform hover:scale-[1.03] active:scale-[0.98] flex-shrink-0 whitespace-nowrap"
+            style={{ background: '#FF9500', color: '#000' }}
+          >
+            Réserver un créneau →
+          </a>
+        </div>
+
       </div>
     </section>
   );
