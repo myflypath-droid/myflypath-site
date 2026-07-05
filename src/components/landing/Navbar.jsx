@@ -38,13 +38,14 @@ export default function Navbar() {
 
         <ul className="hidden md:flex items-center gap-7">
           {[
+            ["Démo", "/#demo"],
             ["PPL", "/#training"],
             ["IFR", "/#ifr"],
             ["LogBook", "/#logbook"],
             ["My Univers", "/#myunivers"],
             ["Tarifs", "/#pricing"],
+            ["Clubs", "/clubs"],
             ["Contact", "/#contact"],
-            ["RDV", "/#rdv"],
           ].map(([label, href]) => (
             <li key={href}>
               <a href={href} className="text-sm text-white/60 hover:text-white transition-colors duration-200 font-medium">

@@ -2,6 +2,7 @@ import React from "react";
 import Navbar from "../components/landing/Navbar";
 import Hero from "../components/landing/Hero";
 import TrustBar from "../components/landing/TrustBar";
+import DemoSection from "../components/landing/DemoSection";
 import TrainingSection from "../components/landing/TrainingSection";
 import IFRSection from "../components/landing/IFRSection";
 import LogbookSection from "../components/landing/LogbookSection";
@@ -23,6 +24,7 @@ export default function Home() {
       <main>
         <Hero />
         <TrustBar />
+        <DemoSection />
         <TrainingSection />
         <IFRSection />
         <LogbookSection />
