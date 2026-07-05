@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 
-const SCREEN_PROFILE = "/images/screen/PROFILE.jpeg";
-const MASCOT_DETECTIVE = "/images/mascotte/detective.png";
+const SCREEN_PROFILE = "/images/screen/PROFILE.webp";
+const MASCOT_DETECTIVE = "/images/mascotte/detective.webp";
 
 const profileFeatures = [
   { emoji: "⚡", label: "Énergie", desc: "Progresses chaque jour, se recharge tous les jours à minuit.", color: "#FF9500" },
@@ -66,9 +66,9 @@ export default function ProfileSection() {
               style={{ background: '#FFD700' }} />
             <div className="relative">
               <div className="iphone-frame animate-float-slow" style={{ width: 280 }}>
-                <img src={SCREEN_PROFILE} alt="Profil" className="w-full block" />
+                <img loading="lazy" src={SCREEN_PROFILE} alt="Profil" className="w-full block" />
               </div>
-              <img
+              <img loading="lazy"
                 src={MASCOT_DETECTIVE}
                 alt="Checklou detective"
                 className="absolute -left-14 bottom-0 w-28 drop-shadow-2xl"

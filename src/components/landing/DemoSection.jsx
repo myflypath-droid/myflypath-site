@@ -3,25 +3,25 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const STEPS = [
   {
-    screen: "/images/screen/ACCUEIL.jpeg",
+    screen: "/images/screen/ACCUEIL.webp",
     label: "Ton accueil",
     desc: "Reprends là où tu t'es arrêté, chaque jour.",
     tap: { x: "50%", y: "82%" },
   },
   {
-    screen: "/images/screen/PARCOURT PPL.jpeg",
+    screen: "/images/screen/PARCOURT PPL.webp",
     label: "Ton parcours PPL",
     desc: "Une progression gamifiée, module par module.",
     tap: { x: "50%", y: "40%" },
   },
   {
-    screen: "/images/screen/PPL.jpeg",
+    screen: "/images/screen/PPL.webp",
     label: "Micro-leçons",
     desc: "Des notions courtes, retenues durablement.",
     tap: { x: "50%", y: "70%" },
   },
   {
-    screen: "/images/screen/LOGBOOK.jpeg",
+    screen: "/images/screen/LOGBOOK.webp",
     label: "Ton LogBook",
     desc: "Chaque vol enregistré, tes stats en direct.",
     tap: { x: "50%", y: "55%" },
@@ -81,6 +81,7 @@ export default function DemoSection() {
               <div className="iphone-frame animate-float-slow relative" style={{ width: 290 }}>
                 <AnimatePresence mode="wait">
                   <motion.img
+                    loading="lazy"
                     key={active}
                     src={step.screen}
                     alt={step.label}

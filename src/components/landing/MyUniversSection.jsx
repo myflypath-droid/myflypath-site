@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const SCREEN_MYUNIVERS = "/images/screen/ACCUEIL.jpeg";
+const SCREEN_MYUNIVERS = "/images/screen/ACCUEIL.webp";
 
 const TABS = [
   { id: "explorer", label: "Explorer", icon: "🌍" },
@@ -185,7 +185,7 @@ export default function MyUniversSection() {
                                 </span>
                               </div>
                             </div>
-                            <img src="/images/mascotte/focus_compass.PNG" alt="Checklou"
+                            <img loading="lazy" src="/images/mascotte/focus_compass.webp" alt="Checklou"
                               className="w-16 h-16 object-contain"
                               style={{ filter: 'drop-shadow(0 4px 12px rgba(34,197,94,0.4))' }} />
                           </div>
@@ -374,10 +374,10 @@ export default function MyUniversSection() {
               style={{ background: '#FF9500' }} />
             <div style={{ position: 'relative', overflow: 'visible', paddingTop: '3rem', paddingRight: '3rem' }}>
               <div className="iphone-frame animate-float" style={{ width: 280 }}>
-                <img src={SCREEN_MYUNIVERS} alt="MyUnivers" className="w-full block" />
+                <img loading="lazy" src={SCREEN_MYUNIVERS} alt="MyUnivers" className="w-full block" />
               </div>
-              <img
-                src="/images/mascotte/happy_jump.PNG"
+              <img loading="lazy"
+                src="/images/mascotte/happy_jump.webp"
                 alt="Checklou"
                 style={{ position: 'absolute', top: 0, right: 0, width: '7rem', zIndex: 20,
                   filter: 'drop-shadow(0 8px 32px rgba(255,149,0,0.5))' }}

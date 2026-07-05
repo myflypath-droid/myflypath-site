@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const STANDARD = "/images/mascotte/Standard.png";
+const STANDARD = "/images/mascotte/Standard.webp";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);

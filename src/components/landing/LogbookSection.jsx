@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const SCREEN_STATS = "/images/screen/STAT LOG.jpeg";
-const SCREEN_VOLS = "/images/screen/LOGBOOK.jpeg";
-const SCREEN_SHARE = "/images/screen/SHARE.jpeg";
-const SCREEN_CARTE = "/images/screen/MAP.jpeg";
-const SCREEN_AGENDA = "/images/screen/CALENDIER.jpeg";
-const MASCOT_DREAMER = "/images/mascotte/laid.png";
+const SCREEN_STATS = "/images/screen/STAT LOG.webp";
+const SCREEN_VOLS = "/images/screen/LOGBOOK.webp";
+const SCREEN_SHARE = "/images/screen/SHARE.webp";
+const SCREEN_CARTE = "/images/screen/MAP.webp";
+const SCREEN_AGENDA = "/images/screen/CALENDIER.webp";
+const MASCOT_DREAMER = "/images/mascotte/laid.webp";
 
 const tabs = [
   { label: "Stats", screen: SCREEN_STATS },
@@ -112,9 +112,9 @@ export default function LogbookSection() {
               <div className="absolute -inset-10 rounded-full blur-[60px] opacity-20 pointer-events-none"
                 style={{ background: '#FF9500' }} />
               <div className="iphone-frame animate-float-slow" style={{ width: 280 }}>
-                <img src={tabs[active].screen} alt={tabs[active].label} className="w-full block" />
+                <img loading="lazy" src={tabs[active].screen} alt={tabs[active].label} className="w-full block" />
               </div>
-              <img
+              <img loading="lazy"
                 src={MASCOT_DREAMER}
                 alt="Checklou"
                 className="absolute -left-14 -bottom-4 w-28 drop-shadow-2xl"

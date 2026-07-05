@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const SCREEN_PARCOURS = "/images/screen/PPL.jpeg";
-const SCREEN_PATH = "/images/screen/PARCOURT PPL.jpeg";
-const SCREEN_FICHES = "/images/screen/FICHE.jpeg";
-const MASCOT_COMPASS = "/images/mascotte/focus_compass.png";
+const SCREEN_PARCOURS = "/images/screen/PPL.webp";
+const SCREEN_PATH = "/images/screen/PARCOURT PPL.webp";
+const SCREEN_FICHES = "/images/screen/FICHE.webp";
+const MASCOT_COMPASS = "/images/mascotte/focus_compass.webp";
 const modules = [
   { icon: "⚙️", name: "Connaissance aéronef", lessons: "" },
   { icon: "🌦️", name: "Météorologie", lessons: "" },
@@ -144,9 +144,9 @@ export default function TrainingSection() {
                 style={{ background: '#4A7FE0' }}
               />
               <div className="iphone-frame animate-float" style={{ width: 280 }}>
-                <img src={screens[activeScreen]} alt={labels[activeScreen]} className="w-full block" />
+                <img loading="lazy" src={screens[activeScreen]} alt={labels[activeScreen]} className="w-full block" />
               </div>
-              <img
+              <img loading="lazy"
                 src={MASCOT_COMPASS}
                 alt="Checklou"
                 className="absolute -right-12 -bottom-8 w-28 drop-shadow-2xl"

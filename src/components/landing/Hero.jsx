@@ -1,9 +1,9 @@
 import React from "react";
 import { Star } from "lucide-react";
 
-const MASCOT_CELEBRATE = "/images/mascotte/happy_jump.png";
-const SCREEN_HOME = "/images/screen/ACCUEIL.jpeg";
-const SCREEN_PPL  = "/images/screen/PPL.jpeg";
+const MASCOT_CELEBRATE = "/images/mascotte/happy_jump.webp";
+const SCREEN_HOME = "/images/screen/ACCUEIL.webp";
+const SCREEN_PPL  = "/images/screen/PPL.webp";
 
 export default function Hero() {
   return (

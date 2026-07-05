@@ -1,6 +1,6 @@
 import React from "react";
 
-const STANDARD = "/images/mascotte/Standard.png";
+const STANDARD = "/images/mascotte/Standard.webp";
 
 export default function Footer() {
   return (
@@ -10,7 +10,7 @@ export default function Footer() {
 
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <img src={STANDARD} alt="Checklou" className="w-8 h-8 object-contain" />
+            <img loading="lazy" src={STANDARD} alt="Checklou" className="w-8 h-8 object-contain" />
             <span className="font-bold text-lg tracking-tight text-white">
               My<span style={{ color: '#FF9500' }}>Fly</span>Path
             </span>

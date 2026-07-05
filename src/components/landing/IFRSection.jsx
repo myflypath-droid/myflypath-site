@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 
 const tabs = [
-  { label: "Parcours IFR", screen: "/images/screen/IFR.jpeg" },
-  { label: "Modules", screen: "/images/screen/MODULE IFR.jpeg" },
-  { label: "Simulateur", screen: "/images/screen/SIMU IFR.jpeg" },
+  { label: "Parcours IFR", screen: "/images/screen/IFR.webp" },
+  { label: "Modules", screen: "/images/screen/MODULE IFR.webp" },
+  { label: "Simulateur", screen: "/images/screen/SIMU IFR.webp" },
 ];
 
 const modules = [
@@ -108,7 +108,7 @@ export default function IFRSection() {
                 style={{ background: '#4A7FE0' }}
               />
               <div className="iphone-frame animate-float" style={{ width: 280 }}>
-                <img
+                <img loading="lazy"
                   src={tabs[activeScreen].screen}
                   alt={tabs[activeScreen].label}
                   className="w-full block"

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-const MASCOT_NEUTRAL = "/images/mascotte/Standard.png";
+const MASCOT_NEUTRAL = "/images/mascotte/Standard.webp";
 
 export default function DownloadCTA() {
   const sectionRef = useRef(null);
@@ -49,7 +49,7 @@ export default function DownloadCTA() {
       </div>
 
       <div className="max-w-4xl mx-auto px-5 text-center relative">
-        <img
+        <img loading="lazy"
           src={MASCOT_NEUTRAL}
           alt="Checklou"
           className="reveal w-48 md:w-64 mx-auto mb-8 drop-shadow-2xl animate-float"
