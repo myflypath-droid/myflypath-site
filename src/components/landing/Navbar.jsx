@@ -38,13 +38,13 @@ export default function Navbar() {
 
         <ul className="hidden md:flex items-center gap-7">
           {[
-            ["PPL", "#training"],
-            ["IFR", "#ifr"],
-            ["LogBook", "#logbook"],
-            ["My Univers", "#myunivers"],
-            ["Tarifs", "#pricing"],
-            ["Contact", "#contact"],
-            ["RDV", "#rdv"],
+            ["PPL", "/#training"],
+            ["IFR", "/#ifr"],
+            ["LogBook", "/#logbook"],
+            ["My Univers", "/#myunivers"],
+            ["Tarifs", "/#pricing"],
+            ["Contact", "/#contact"],
+            ["RDV", "/#rdv"],
           ].map(([label, href]) => (
             <li key={href}>
               <a href={href} className="text-sm text-white/60 hover:text-white transition-colors duration-200 font-medium">
@@ -52,6 +52,13 @@ export default function Navbar() {
               </a>
             </li>
           ))}
+          <li>
+            <a href="/tester-mon-niveau"
+              className="text-sm font-semibold px-3 py-1.5 rounded-full transition-colors duration-200"
+              style={{ color: "#FF9500", background: "rgba(255,149,0,0.12)", border: "1px solid rgba(255,149,0,0.3)" }}>
+              Tester mon niveau
+            </a>
+          </li>
         </ul>
 
         <a

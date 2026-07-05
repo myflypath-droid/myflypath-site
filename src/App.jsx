@@ -7,6 +7,7 @@ import Confidentialite from "@/pages/Confidentialite";
 import ClubPage from "@/pages/ClubPage";
 import ClubSuccess from "@/pages/ClubSuccess";
 import AdminDashboard from "@/pages/AdminDashboard";
+import QuizPPL from "@/pages/QuizPPL";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/cgu" element={<CGU />} />
         <Route path="/cgv" element={<CGV />} />
         <Route path="/confidentialite" element={<Confidentialite />} />
+        <Route path="/tester-mon-niveau" element={<QuizPPL />} />
         <Route path="/club/:slug" element={<ClubPage />} />
         <Route path="/club/:slug/success" element={<ClubSuccess />} />
         <Route path="/admin" element={<AdminDashboard />} />
