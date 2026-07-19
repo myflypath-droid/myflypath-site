@@ -5,7 +5,8 @@ import { getAndMarkAppleCode } from "./get-apple-code.mjs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const ADMIN_EMAIL = "admin@myflypath.fr";
+const ADMIN_EMAIL = "contact@myflypath.fr";
+const MASCOT_URL = "https://myflypath.fr/images/mascotte/happy_key_email.png";
 
 function getClubStore() {
   return getStore({
@@ -105,7 +106,10 @@ function buildClientEmail({ club_nom, appleCode, offerLabel, planType }) {
     : "Bienvenue sur MyFlyPath Pro !";
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#13141f;color:#fff;padding:40px;border-radius:16px;">
-      <h1 style="color:#FF9500;">${title}</h1>
+      <div style="text-align:center;margin-bottom:12px;">
+        <img src="${MASCOT_URL}" alt="Chek Lou - MyFlyPath" width="130" style="width:130px;height:auto;display:inline-block;border:0;" />
+      </div>
+      <h1 style="color:#FF9500;text-align:center;">${title}</h1>
       <p>Merci pour votre achat <strong>${offerLabel}</strong> via <strong>${club_nom}</strong>.</p>
       ${appleCode ? `
         <div style="background:#1e1f2e;border:1px solid rgba(255,149,0,0.3);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
@@ -114,7 +118,7 @@ function buildClientEmail({ club_nom, appleCode, offerLabel, planType }) {
           <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:8px 0 0;">A saisir dans l'App Store</p>
         </div>
       ` : `<p style="color:#FF4444;">Notre equipe vous contactera sous 24h avec votre code.</p>`}
-      <p>Questions ? <a href="mailto:admin@myflypath.fr" style="color:#FF9500;">admin@myflypath.fr</a></p>
+      <p>Un problème ou une question ? Contactez-nous à <a href="mailto:contact@myflypath.fr" style="color:#FF9500;">contact@myflypath.fr</a></p>
     </div>`;
 }
 

@@ -10,7 +10,8 @@ import { getStore } from "@netlify/blobs";
 import { resolveStoreName } from "./get-apple-code.mjs";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const ADMIN_EMAIL = "admin@myflypath.fr";
+const ADMIN_EMAIL = "contact@myflypath.fr";
+const MASCOT_URL = "https://myflypath.fr/images/mascotte/happy_key_email.png";
 
 function getCodesStore(type) {
   return getStore({
@@ -155,7 +156,10 @@ async function sendMail({ to, subject, html }) {
 function buildGiftEmail({ appleCode, motif }) {
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#13141f;color:#fff;padding:40px;border-radius:16px;">
-      <h1 style="color:#FF9500;">Un abonnement MyFlyPath Pro vous est offert</h1>
+      <div style="text-align:center;margin-bottom:12px;">
+        <img src="${MASCOT_URL}" alt="Chek Lou - MyFlyPath" width="130" style="width:130px;height:auto;display:inline-block;border:0;" />
+      </div>
+      <h1 style="color:#FF9500;text-align:center;">Un abonnement MyFlyPath Pro vous est offert</h1>
       <p>Bonne nouvelle ! Vous beneficiez d'un acces <strong>MyFlyPath Pro - Abonnement annuel</strong>, offert par l'equipe MyFlyPath.</p>
       <div style="background:#1e1f2e;border:1px solid rgba(255,149,0,0.3);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
         <p style="color:rgba(255,255,255,0.6);margin:0 0 8px;">Votre code d'activation :</p>
@@ -163,7 +167,7 @@ function buildGiftEmail({ appleCode, motif }) {
         <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:8px 0 0;">A saisir dans l'App Store</p>
       </div>
       <p style="color:rgba(255,255,255,0.7);font-size:14px;">Comment l'utiliser : ouvrez l'App Store, appuyez sur votre photo de profil en haut a droite, puis "Utiliser un code cadeau ou un code", et saisissez le code ci-dessus.</p>
-      <p>Bon vol avec MyFlyPath ! Une question ? <a href="mailto:admin@myflypath.fr" style="color:#FF9500;">admin@myflypath.fr</a></p>
+      <p>Bon vol avec MyFlyPath ! Un probleme ou une question ? Contactez-nous a <a href="mailto:contact@myflypath.fr" style="color:#FF9500;">contact@myflypath.fr</a></p>
     </div>`;
 }
 
