@@ -3,10 +3,13 @@ import { getStore } from "@netlify/blobs";
 
 // Map d'un "type" d'offre vers le nom du store de codes correspondant.
 // "pro"      → codes Apple abonnement annuel (store existant "apple-codes")
-// "logbook"  → codes Apple Logbook 6 mois     (nouveau store "logbook-codes")
+// "logbook"  → codes Apple Logbook 6 mois     (store "logbook-codes")
+// "gift"     → codes Apple offerts (cadeaux / partenariats influenceurs)
+//              stock dedie separe des ventes ("gift-codes"), offre Pro annuel
 export const CODE_STORES = {
   pro: "apple-codes",
   logbook: "logbook-codes",
+  gift: "gift-codes",
 };
 
 export function resolveStoreName(type) {

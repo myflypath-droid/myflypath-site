@@ -37,6 +37,22 @@ function exportCSV(orders) {
   URL.revokeObjectURL(url);
 }
 
+function exportGiftCSV(orders) {
+  const header = ["Email", "Nom / motif", "Code Apple", "Date"];
+  const rows = orders.map((o) => [
+    o.sentTo, o.note || o.club || "", o.code,
+    o.sentAt ? new Date(o.sentAt).toLocaleDateString("fr-FR") : "",
+  ]);
+  const csv = [header, ...rows].map((r) => r.join(";")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `myflypath-cadeaux-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -44,6 +60,7 @@ export default function AdminDashboard() {
   const [clubs, setClubs] = useState([]);
   const [codesData, setCodesData] = useState(null);
   const [logbookCodesData, setLogbookCodesData] = useState(null);
+  const [giftCodesData, setGiftCodesData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("clubs");
   const [filter, setFilter] = useState("all");
@@ -64,10 +81,17 @@ export default function AdminDashboard() {
   const [selectedCodes, setSelectedCodes] = useState([]);
   const [deletingCodes, setDeletingCodes] = useState(false);
 
+  // Cadeaux / partenaires — envoi manuel
+  const [giftEmail, setGiftEmail] = useState("");
+  const [giftMotif, setGiftMotif] = useState("");
+  const [sendingGift, setSendingGift] = useState(false);
+  const [giftMsg, setGiftMsg] = useState("");
+  const [resendingCode, setResendingCode] = useState(null);
+
   const fetchAll = async (pwd) => {
     setLoading(true);
     try {
-      const [statsRes, codesRes, logbookRes] = await Promise.all([
+      const [statsRes, codesRes, logbookRes, giftRes] = await Promise.all([
         fetch("/.netlify/functions/club-stats", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -83,14 +107,21 @@ export default function AdminDashboard() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ password: pwd, type: "logbook" }),
         }),
+        fetch("/.netlify/functions/get-codes-admin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: pwd, type: "gift" }),
+        }),
       ]);
       const statsData = await statsRes.json();
       const codesJson = codesRes.ok ? await codesRes.json() : { codes: [] };
       const logbookJson = logbookRes.ok ? await logbookRes.json() : { codes: [] };
+      const giftJson = giftRes.ok ? await giftRes.json() : { codes: [] };
       if (statsRes.ok) {
         setClubs(statsData.clubs || []);
         setCodesData(codesJson);
         setLogbookCodesData(logbookJson);
+        setGiftCodesData(giftJson);
         setAuthed(true);
         setAuthError("");
       } else {
@@ -182,6 +213,52 @@ export default function AdminDashboard() {
     setDeletingCodes(false);
   };
 
+  const handleSendGift = async () => {
+    setSendingGift(true);
+    setGiftMsg("");
+    try {
+      const res = await fetch("/.netlify/functions/send-gift-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, email: giftEmail.trim(), note: giftMotif.trim(), type: "gift" }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setGiftMsg(`Envoye ! Code ${data.code} envoye a ${data.sentTo}. Codes cadeaux restants : ${data.available}`);
+        setGiftEmail(""); setGiftMotif("");
+        fetchAll(password);
+      } else {
+        setGiftMsg(`Erreur : ${data.error || "envoi impossible"}`);
+      }
+    } catch {
+      setGiftMsg("Erreur reseau");
+    }
+    setSendingGift(false);
+  };
+
+  const handleResendGift = async (code, email) => {
+    if (!confirm(`Renvoyer le code ${code} par email a ${email} ?`)) return;
+    setResendingCode(code);
+    setGiftMsg("");
+    try {
+      const res = await fetch("/.netlify/functions/resend-gift-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, code, type: "gift" }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setGiftMsg(`Renvoye ! Code ${data.code} renvoye a ${data.sentTo}.`);
+        fetchAll(password);
+      } else {
+        setGiftMsg(`Erreur : ${data.error || "renvoi impossible"}`);
+      }
+    } catch {
+      setGiftMsg("Erreur reseau");
+    }
+    setResendingCode(null);
+  };
+
   const toggleSelectCode = (code) => {
     setSelectedCodes(prev =>
       prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
@@ -198,25 +275,31 @@ export default function AdminDashboard() {
 
   const now = new Date();
 
-  // Type de codes lié à l'onglet actif (pro = abo annuel, logbook = 6 mois)
-  const codesType = (activeTab === "codes-logbook" || activeTab === "stock-logbook") ? "logbook" : "pro";
+  // Type de codes lie a l'onglet actif (pro = abo annuel, logbook = 6 mois, gift = cadeaux/partenaires)
+  const codesType =
+    (activeTab === "codes-logbook" || activeTab === "stock-logbook") ? "logbook" :
+    (activeTab === "gift-send" || activeTab === "stock-gift") ? "gift" : "pro";
   const isLogbookTab = codesType === "logbook";
+  const isGiftTab = codesType === "gift";
 
-  // Compteurs par type pour les libellés d'onglets
+  // Compteurs par type pour les libelles d'onglets
   const proAll = codesData?.codes || [];
   const logbookAll = logbookCodesData?.codes || [];
+  const giftAll = giftCodesData?.codes || [];
   const proUsed = proAll.filter(c => c.used).length;
   const logbookUsed = logbookAll.filter(c => c.used).length;
+  const giftUsed = giftAll.filter(c => c.used).length;
   const proValid = proAll.filter(c => !c.used && (!c.expiresAt || new Date(c.expiresAt) >= now)).length;
   const logbookValid = logbookAll.filter(c => !c.used && (!c.expiresAt || new Date(c.expiresAt) >= now)).length;
+  const giftValid = giftAll.filter(c => !c.used && (!c.expiresAt || new Date(c.expiresAt) >= now)).length;
 
   // Dataset actif
-  const allCodes = isLogbookTab ? logbookAll : proAll;
+  const allCodes = isGiftTab ? giftAll : isLogbookTab ? logbookAll : proAll;
   const usedCodes = allCodes.filter(c => c.used);
   const availableCodes = allCodes.filter(c => !c.used);
   const expiredCodes = availableCodes.filter(c => c.expiresAt && new Date(c.expiresAt) < now);
   const validCodes = availableCodes.filter(c => !c.expiresAt || new Date(c.expiresAt) >= now);
-  const codeTypeLabel = isLogbookTab ? "Logbook 6 mois" : "Pro annuel";
+  const codeTypeLabel = isGiftTab ? "Cadeau / Partenaire (Pro annuel)" : isLogbookTab ? "Logbook 6 mois" : "Pro annuel";
 
   const totalVisites = clubs.reduce((s, c) => s + c.visites, 0);
   const totalAchats = clubs.reduce((s, c) => s + c.achats, 0);
@@ -276,6 +359,8 @@ export default function AdminDashboard() {
             { id: "stock-pro", label: `Stock Pro (${proValid})` },
             { id: "codes-logbook", label: `Ventes Logbook (${logbookUsed})` },
             { id: "stock-logbook", label: `Stock Logbook (${logbookValid})` },
+            { id: "gift-send", label: `Cadeaux (${giftUsed})` },
+            { id: "stock-gift", label: `Stock Cadeaux (${giftValid})` },
           ].map((tab) => (
             <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSelectedCodes([]); }}
               className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
@@ -436,8 +521,112 @@ export default function AdminDashboard() {
           </>
         )}
 
+        {/* ── CADEAUX / PARTENAIRES (envoi manuel) ── */}
+        {activeTab === "gift-send" && (
+          <div className="space-y-6">
+
+            <div>
+              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider"
+                style={{ background: 'rgba(255,149,0,0.15)', color: '#FF9500' }}>
+                Cadeaux / Partenaires — Pro annuel
+              </span>
+            </div>
+
+            {/* Formulaire d'envoi */}
+            <div className="rounded-2xl p-6" style={card}>
+              <h2 className="text-lg font-black text-white mb-1">Offrir un abonnement</h2>
+              <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                Saisissez l'email du destinataire : un code du stock cadeaux est reserve et envoye automatiquement par mail.
+                {" "}Codes cadeaux disponibles : <strong style={{ color: giftValid > 0 ? '#22c55e' : '#FF6B6B' }}>{giftValid}</strong>
+              </p>
+              <div className="space-y-4">
+                <div className="flex gap-4 flex-wrap">
+                  <div className="flex-1 min-w-56">
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      Email du destinataire
+                    </label>
+                    <input type="email" value={giftEmail} onChange={(e) => setGiftEmail(e.target.value)}
+                      placeholder="prenom@exemple.com" className="w-full rounded-xl px-4 py-2.5 text-sm text-white" style={inp} />
+                  </div>
+                  <div className="flex-1 min-w-56">
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      Nom / motif (influenceur, campagne...)
+                    </label>
+                    <input type="text" value={giftMotif} onChange={(e) => setGiftMotif(e.target.value)}
+                      placeholder="ex: Jean Aero — Instagram" className="w-full rounded-xl px-4 py-2.5 text-sm text-white" style={inp} />
+                  </div>
+                </div>
+                <button onClick={handleSendGift} disabled={!giftEmail.trim() || sendingGift || giftValid === 0}
+                  className="px-6 py-2.5 rounded-xl font-black text-sm"
+                  style={{
+                    background: (!giftEmail.trim() || sendingGift || giftValid === 0) ? 'rgba(255,149,0,0.4)' : '#FF9500',
+                    color: '#000',
+                    cursor: (!giftEmail.trim() || sendingGift || giftValid === 0) ? 'not-allowed' : 'pointer',
+                  }}>
+                  {sendingGift ? "Envoi..." : "Envoyer le code"}
+                </button>
+                {giftValid === 0 && (
+                  <p className="text-sm font-bold" style={{ color: '#FF6B6B' }}>
+                    Stock cadeaux vide — chargez des codes dans l'onglet "Stock Cadeaux".
+                  </p>
+                )}
+                {giftMsg && (
+                  <p className="text-sm font-bold" style={{ color: giftMsg.startsWith('Erreur') ? '#FF6B6B' : '#22c55e' }}>
+                    {giftMsg}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Historique des envois */}
+            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="flex items-center justify-between px-4 py-3" style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span className="text-sm font-bold text-white">{usedCodes.length} code(s) offert(s)</span>
+                {usedCodes.length > 0 && (
+                  <button onClick={() => exportGiftCSV(usedCodes)}
+                    className="px-4 py-1.5 rounded-lg text-xs font-black flex items-center gap-2"
+                    style={{ background: '#22c55e', color: '#000' }}>
+                    Exporter CSV
+                  </button>
+                )}
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                    {["Email", "Nom / motif", "Code", "Date d'envoi", "Actions"].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {usedCodes.length === 0 ? (
+                    <tr><td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Aucun code offert pour l'instant</td></tr>
+                  ) : [...usedCodes].sort((a, b) => new Date(b.sentAt || 0) - new Date(a.sentAt || 0)).map((o, i) => (
+                    <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                      <td className="px-4 py-3 text-sm text-white">{o.sentTo}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{o.note || o.club || "—"}</td>
+                      <td className="px-4 py-3 font-mono text-sm font-bold" style={{ color: '#FF9500' }}>{o.code}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                        {o.sentAt ? new Date(o.sentAt).toLocaleDateString("fr-FR") : "—"}
+                        {o.resentAt && <span className="block text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>renvoye le {new Date(o.resentAt).toLocaleDateString("fr-FR")}</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button onClick={() => handleResendGift(o.code, o.sentTo)} disabled={resendingCode === o.code}
+                          className="px-3 py-1 rounded-lg text-xs font-bold"
+                          style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', cursor: resendingCode === o.code ? 'not-allowed' : 'pointer' }}>
+                          {resendingCode === o.code ? "Envoi..." : "Renvoyer"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* ── STOCK ── */}
-        {(activeTab === "stock-pro" || activeTab === "stock-logbook") && (
+        {(activeTab === "stock-pro" || activeTab === "stock-logbook" || activeTab === "stock-gift") && (
           <div className="space-y-6">
 
             <div>
